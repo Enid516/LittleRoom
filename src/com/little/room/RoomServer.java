@@ -20,7 +20,7 @@ public class RoomServer {
 	public static void main(String[] args) {
 		ServerImpl server = new ServerImpl();
 		server.start();
-		createFrame();
+//		createFrame();
 	}
 	
 	private static void createFrame(){
