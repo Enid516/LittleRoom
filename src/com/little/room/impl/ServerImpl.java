@@ -92,8 +92,8 @@ public class ServerImpl implements Server {
                 if (msg != null) {
                     System.out.println(msg);
                     operatorMessage(mSocket, msg);
-                    reader.close();
-                    mSocket.close();
+//                    reader.close();
+//                    mSocket.close();
                 }
             } catch (IOException e) {
                 e.printStackTrace();
@@ -116,7 +116,7 @@ public class ServerImpl implements Server {
     	}
     }
     
-    private void sendClientMsg(String msg) {
+    public void sendClientMsg(String msg) {
         if (mSocketList == null)
             return;
         for (int i = 0; i < mSocketList.size(); i++) {

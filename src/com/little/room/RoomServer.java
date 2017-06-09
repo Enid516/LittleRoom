@@ -1,49 +1,46 @@
 package com.little.room;
 
-import java.awt.BorderLayout;
-import java.awt.Button;
-import java.awt.Container;
-import java.awt.PageAttributes;
-import java.awt.TextField;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 
 import javax.swing.JButton;
 import javax.swing.JFrame;
-import javax.swing.JList;
-import javax.swing.JPanel;
 import javax.swing.JTextField;
-import javax.swing.border.Border;
 
+import com.alibaba.fastjson.JSON;
 import com.little.room.impl.ServerImpl;
+import com.little.room.model.ChatModel;
+import com.little.room.view.ServerFrame;
 
 public class RoomServer {
-
+	private ServerImpl mServer;
+	private ServerFrame serverFrame;
 	public static void main(String[] args) {
-		ServerImpl server = new ServerImpl();
-		server.start();
-//		createFrame();
+		new RoomServer().start();
 	}
 	
-	private static void createFrame(){
-		JFrame jFrame = new JFrame();
-		jFrame.setTitle("little room");
-		jFrame.setSize(500, 400);
-		
-		String[] jString = {"aa","bb","cc","aa","bb","cc","aa","bb","cc","aa","bb","cc","aa","bb","cc","aa","bb","cc","aa","bb","cc","aa","bb","cc","aa","bb","cc"};
-		JList jList = new JList<>(jString);
-		jFrame.add(jList,BorderLayout.PAGE_START);
-		
-		
-		JTextField text = new JTextField(40);
-		jFrame.add(text,BorderLayout.CENTER);
-		
-		JButton button = new JButton("send");
-		jFrame.add(button,BorderLayout.PAGE_END);
-		
-//		Container container = jFrame.getContentPane();
-//		JPanel jPanel = new JPanel();
-//		container.add(jPanel);
-		jFrame.setVisible(true);
-		
+	private void start() {
+		mServer = new ServerImpl();
+		mServer.start();
+		serverFrame = new ServerFrame();
+		serverFrame.setActionListener(actionListener);
 	}
-
+	
+	private ActionListener actionListener = new ActionListener() {
+		
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			String string = serverFrame.getJTextField().getText();
+			mServer.sendClientMsg(toJsonString(string));
+		}
+	};
+	
+	private String toJsonString(String msg){
+		ChatModel chatModel = new ChatModel();
+		chatModel.setAction("chat");
+		chatModel.setNickName("server");
+		chatModel.setMessage(msg);
+		String s = JSON.toJSONString(chatModel);
+		return s;
+	}
 }

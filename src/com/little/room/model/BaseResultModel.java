@@ -1,22 +1,31 @@
 package com.little.room.model;
 
 public class BaseResultModel {
-	 private int code;
-	    private String message;
+	private String action;
+	private int code;
+	private String message;
+	
+    public String getAction() {
+        return action;
+    }
 
-	    public int getCode() {
-	        return code;
-	    }
+    public void setAction(String action) {
+        this.action = action;
+    }
 
-	    public void setCode(int code) {
-	        this.code = code;
-	    }
+	public int getCode() {
+		return code;
+	}
 
-	    public String getMessage() {
-	        return message;
-	    }
+	public void setCode(int code) {
+		this.code = code;
+	}
 
-	    public void setMessage(String message) {
-	        this.message = message;
-	    }
+	public String getMessage() {
+		return message;
+	}
+
+	public void setMessage(String message) {
+		this.message = message;
+	}
 }
