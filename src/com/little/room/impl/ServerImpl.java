@@ -16,9 +16,10 @@ import java.util.concurrent.Executors;
 import org.apache.log4j.Logger;
 import org.json.JSONObject;
 
-import com.little.room.JsonUtil;			
 import com.little.room.constant.Constant;
 import com.little.room.i.Server;
+
+import util.ResultMessageUtil;
 
 public class ServerImpl implements Server {
 	private static final String TAG = "ServerImpl";
@@ -37,141 +38,137 @@ public class ServerImpl implements Server {
 	public void stop() {
 		closeServerSocket();
 	}
-	
+
 	/**
-     * ½ÓÊÕ¿Í»§¶ËµÄÏß³Ì
-     */
+	 * æŽ¥å—å®¢æœç«¯è¿žæŽ¥çš„çº¿ç¨‹
+	 */
 
-    private class AcceptClientThread extends Thread {
-        @Override
-        public void run() {
-            super.run();
-            try {
-                mServerSocket = new ServerSocket(Constant.PORT);
-                isRuning = true;
-                System.out.println("server is runing¡£¡£¡£");
-                Socket clientSocket;
-                while (isRuning) {//µÈ´ý¿Í»§¶ËÁ¬½Ó
-                    clientSocket = mServerSocket.accept();
-                    if (!isConnect(clientSocket)) {
-                        mSocketList.add(clientSocket);
-                        String msg = clientSocket.getInetAddress().toString()+ "Á¬½Óµ½·þÎñÆ÷£¬µ±Ç°Á¬½ÓÊýÊÇ£º" + mSocketList.size();
-                        System.out.println(msg);
-                        String result = "{\"code\":0,\"message\":\"connect success\"}";
-                        sendClientMsg(clientSocket,result);
-                    }
-                    getExecutorService().execute(new ServerWork(clientSocket));
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    /**
-     * ½ÓÊÕ¿Í»§¶Ë·¢ËÍµÄÏûÏ¢
-     */
-    private class ServerWork implements Runnable {
-        private Socket mSocket;
-        private BufferedReader reader;
-        private String msg;
+	private class AcceptClientThread extends Thread {
+		@Override
+		public void run() {
+			super.run();
+			try {
+				mServerSocket = new ServerSocket(Constant.PORT);
+				isRuning = true;
+				System.out.println("server is runing");
+				Socket clientSocket;
+				while (isRuning) {
+					clientSocket = mServerSocket.accept();
+					if (!isConnect(clientSocket)) {
+						mSocketList.add(clientSocket);
+						String msg = clientSocket.getInetAddress().toString() + "å½“å‰è¿žæŽ¥æ•°æ˜¯ï¼š " + mSocketList.size();
+						System.out.println(msg);
+						String result = ResultMessageUtil.getConnectResultString(true);
+						sendClientMsg(clientSocket, result);
+					}
+					getExecutorService().execute(new ServerWork(clientSocket));
+				}
+				mServerSocket.close();
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
+	}
 
-        ServerWork(Socket socket) {
-            this.mSocket = socket;
-            try {
-                reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
+	/**
+	 * å¤„ç†å®¢æœç«¯æ¶ˆæ¯
+	 */
+	private class ServerWork implements Runnable {
+		private Socket mSocket;
+		private BufferedReader reader;
+		private String msg;
 
-        @Override
-        public void run() {//½ÓÊÕclientÏûÏ¢
-            try {
-                msg = reader.readLine();
-                if (msg != null) {
-                    System.out.println(msg);
-                    operatorMessage(mSocket, msg);
-//                    reader.close();
-//                    mSocket.close();
-                }
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-    }
-    
-    private void operatorMessage(Socket socket,String message){
-    	logger.debug(message);
-    	JSONObject jsonObject = new JSONObject(message);
-    	String action = jsonObject.getString("action");
-    	String result = null;
-    	if(action.equals("login")){
-    		result = "{\"code\":0,\"message\":\"login success\"}";
-    	}else if(action.equals("sendMessage")){
-    		result = "{\"code\":0,\"message\":\"send message success\"}";
-    	}
-    	if(result != null && result.length() > 0){
-    		sendClientMsg(socket, result);
-    	}
-    }
-    
-    public void sendClientMsg(String msg) {
-        if (mSocketList == null)
-            return;
-        for (int i = 0; i < mSocketList.size(); i++) {
-            sendClientMsg(mSocketList.get(i), msg);
-        }
-    }
+		ServerWork(Socket socket) {
+			this.mSocket = socket;
+			try {
+				reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+			} catch (IOException e) {
+				e.printStackTrace();
+			}
+		}
 
-    private void sendClientMsg(Socket socket, String msg) {
-        PrintWriter writer;
-        try {
-            writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
-            writer.println(msg);
-            logger.debug("sendClientMsg: " + msg);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-    
-    private void closeServerSocket() {
-        if (mServerSocket != null) {
-            mSocketList.clear();
-        }
-        try {
-            if (mServerSocket != null){
-                mServerSocket.close();
-                isRuning = false;
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
+		@Override
+		public void run() {
+			try {
+				while((msg = reader.readLine())!= null){
+					operatorMessage(mSocket, msg);
+				}
+			} catch (IOException e) {
+				e.printStackTrace();
+			} finally{
+				 try {
+					reader.close();
+					mSocket.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+		}
+	}
 
-    
+	private void operatorMessage(Socket socket, String message) {
+		System.out.println("receive message: " + message);
+		JSONObject jsonObject = new JSONObject(message);
+		String action = jsonObject.getString("action");
+		String result = null;
+		if (action.equals("login")) {
+			result = ResultMessageUtil.getLoginResultString(true);
+		}
+		if (result != null && result.length() > 0) {
+			sendClientMsg(socket, result);
+		}
+	}
 
-    
-    private ExecutorService getExecutorService() {
-        if (executorService == null) {
-            executorService = Executors.newCachedThreadPool();
-        }
-        return executorService;
-    }
+	public void sendClientMsg(String msg) {
+		if (mSocketList == null)
+			return;
+		for (int i = 0; i < mSocketList.size(); i++) {
+			sendClientMsg(mSocketList.get(i), msg);
+		}
+	}
 
-    
-    private boolean isConnect(Socket socket) {
-        if (mSocketList.isEmpty()) {
-            return false;
-        }
-        for (int i = 0; i < mSocketList.size(); i++) {
-            if (mSocketList.get(i).getInetAddress().getHostAddress().equals(socket.getInetAddress().getHostAddress())) {
-                return true;
-            }
-        }
-        return false;
-    }
+	private void sendClientMsg(Socket socket, String msg) {
+		PrintWriter writer = null;
+		try {
+			writer = new PrintWriter(new BufferedWriter(new OutputStreamWriter(socket.getOutputStream())), true);
+			writer.println(msg);
+			//è¿™é‡Œsocketä¸ç”¨å…³é—­ï¼Œå› ä¸ºè¦å®žçŽ°æœåŠ¡ç«¯èƒ½ä¸»åŠ¨ç»™å®¢æˆ·ç«¯å‘é€æ¶ˆæ¯
+			//è¿™é‡Œçš„writerä¸ç”¨å…³é—­ï¼Œå…³é—­socketç›¸å…³çš„è¾“å…¥/è¾“å‡ºæµå¯¹è±¡ï¼Œå°†å…³é—­socket
+		} catch (IOException e) {
+			e.printStackTrace();
+			
+		}
+	}
 
+	private void closeServerSocket() {
+		if (mServerSocket != null) {
+			mSocketList.clear();
+		}
+		try {
+			if (mServerSocket != null) {
+				mServerSocket.close();
+				isRuning = false;
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
 
+	private ExecutorService getExecutorService() {
+		if (executorService == null)
+			executorService = Executors.newCachedThreadPool();
+
+		return executorService;
+	}
+
+	private boolean isConnect(Socket socket) {
+		if (mSocketList.isEmpty())
+			return false;
+		for (int i = 0; i < mSocketList.size(); i++) {
+			if (mSocketList.get(i).getInetAddress().equals(socket.getInetAddress()))
+				return true;
+		}
+		return false;
+	}
 
 }

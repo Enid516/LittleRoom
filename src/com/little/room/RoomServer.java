@@ -9,8 +9,11 @@ import javax.swing.JTextField;
 
 import com.alibaba.fastjson.JSON;
 import com.little.room.impl.ServerImpl;
+import com.little.room.model.ChatMessageModel;
 import com.little.room.model.ChatModel;
 import com.little.room.view.ServerFrame;
+
+import util.ResultMessageUtil;
 
 public class RoomServer {
 	private ServerImpl mServer;
@@ -30,17 +33,17 @@ public class RoomServer {
 		
 		@Override
 		public void actionPerformed(ActionEvent e) {
-			String string = serverFrame.getJTextField().getText();
-			mServer.sendClientMsg(toJsonString(string));
+			String string = serverFrame.getJTextField().getText().trim();
+			if(string != null && string.length() > 0){
+				String result = ResultMessageUtil.getChatResultString(string);
+				mServer.sendClientMsg(result);
+				serverFrame.getJTextField().setText("");
+			}else{
+				System.out.println("输入信息不能为空");
+			}
+			
 		}
 	};
 	
-	private String toJsonString(String msg){
-		ChatModel chatModel = new ChatModel();
-		chatModel.setAction("chat");
-		chatModel.setNickName("server");
-		chatModel.setMessage(msg);
-		String s = JSON.toJSONString(chatModel);
-		return s;
-	}
+	
 }
